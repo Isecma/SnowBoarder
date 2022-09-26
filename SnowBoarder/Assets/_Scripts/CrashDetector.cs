@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,6 +10,9 @@ public class CrashDetector : MonoBehaviour
     [SerializeField] float reloadSceneDelay = 0.5f;
     [SerializeField] ParticleSystem boardEffect;
     [SerializeField] ParticleSystem crashEffect;
+    [SerializeField] AudioClip crashSFX;
+
+    [HideInInspector] public bool hasCrashed;
 
     Collider2D headCollider;
     Collider2D boardCollider;
@@ -20,17 +24,22 @@ public class CrashDetector : MonoBehaviour
     }
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.collider == headCollider)
+        if (collision.collider == headCollider && !hasCrashed)
         {
+            hasCrashed = true;
             crashEffect.Play();
-            var surfaceEffector = this.GetComponent<SurfaceEffector2D>();
-            surfaceEffector.speed = 0;
+            GetComponent<AudioSource>().PlayOneShot(crashSFX);
+            GetComponent<SurfaceEffector2D>().speed = 0;
             Invoke("ReloadScene", reloadSceneDelay);
         }
-        else if (collision.collider == boardCollider)
+        else if (collision.collider == boardCollider && GetComponent<SurfaceEffector2D>().speed != 0)
         {
             boardEffect.Play();
         }
+    }
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        boardEffect.Stop();
     }
 
     void ReloadScene()
